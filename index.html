@@ -1,0 +1,123 @@
+<html>
+	<head>
+		<title>Hamming Code</title>
+		<link rel="stylesheet" href="css/bootstrap.min.css">
+		<script src="js/jquery.js"></script>
+		<script src="js/bootstrap.min.js"></script>
+		<script src="js/vue.js"></script>
+		<script src="js/app.js"></script>
+		<style>
+			body {
+				display: flex;
+				justify-content: center;
+			}
+            #container {
+            	margin-top: 4%;
+            	min-width: 30%;
+            }
+			.table-bordered td, .table-bordered th {
+				border: 3px solid #dee2e6;
+			}
+			.parity-block {
+				min-height: 50px;
+				min-width: 50px;
+				text-align: center;
+				padding-top: 8px;
+				color: white;
+				border: 2px solid white;
+			}
+			.parity {
+				border: 3px solid #ffc107 !important;
+				/* border: 3px solid yellow !important; */
+			}
+        </style>
+	</head>
+	<body>
+		
+		<div id="container">
+			<template v-if="step == 1">
+				<h3 style="text-align: center">THE HAMMING CODE</h3>
+			    <div class="form-group">
+			        <h5><label for="txt">Data word:</label></h5>
+			        <input type="text" class="form-control" v-model="dataword"
+					       placeholder="Data word" id="txt" required>
+			    </div>
+			    <div>
+			        <button 
+			        	v-show="step == 1"
+			        	:disabled="dataword.length == 0"
+			        	@click="encode()"
+			        	class="btn btn-warning float-right">Encode</button>
+			    </div>
+			</template>
+			<encoder 
+				v-else
+				:num-parity="numParity"
+				:codeword="codeword"></encoder>
+			<button 
+		    	v-show="step == 2"
+		    	@click="goBack()"
+		    	class="btn btn-warning float-right">Back</button>
+		</div>
+	
+		<script>
+		    // Define a new component called encoder
+			Vue.component('encoder', {
+			  props: ["numParity", "codeword"],
+			  template: "<div><h3>CODEWORD</h3>"+
+			  	"<h5>There will be {{ numParity }} parity bits!</h5>"+
+					  "<div style='display: flex'>"+
+						"<div class='bg-primary parity-block'"+
+								"v-for='(bit, index) in codeword'"+
+								":key='index'"+
+								":class='{parity: isParityBit(index)}'"+
+							">{{isParityBit(index) ? 'P' : bit}}</div>"+
+					"</div><br>"+
+					"<div style='display: flex'>"+
+						"<div class='bg-primary parity-block'"+
+								"v-for='(bit, index) in codeword'"+
+								":key='index'"+
+								":class='{parity: isParityBit(index)}'"+
+							">{{bit}}</div>"+
+					"</div><br>"+	
+				"</div>",
+			  methods: {
+				isParityBit: function(index) {
+					return Number.isInteger(Math.log2(index + 1))
+				}
+			  }
+			})
+			// create a root vue instance
+			new Vue({
+			  el: "#container",
+			  data: {
+			  	step: 1,
+				dataword: ""
+			  },
+			  computed: {
+				bits: function () {
+					return this.dataword.split("")
+				},
+				numParity: function () {
+			  		return calcNumParityBits(this.bits.length)
+				},
+				codeword: function () {
+					return calcCodeWord(this.bits, this.numParity)
+				}
+			  },
+			  methods: {
+			  	goBack: function () {
+			  		return this.step--
+			  	},
+			  	goNext: function () {
+			  		return this.step++ 
+			  	},
+			  	encode: function () {
+			  		this.goNext()
+			  	}
+			  }
+			})
+		</script>
+	</body>
+
+</html>
