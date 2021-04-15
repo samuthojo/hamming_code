@@ -54,7 +54,7 @@
 			    <div>
 			        <button 
 			        	v-show="step == 1"
-			        	:disabled="dataword.length == 0"
+			        	:disabled="shouldDisable"
 			        	@click="encode()"
 			        	class="btn btn-warning float-right">Encode</button>
 			    </div>
@@ -112,6 +112,15 @@
 				},
 				codeword: function () {
 					return calcCodeWord(this.bits, this.numParity)
+				},
+				shouldDisable: function () {
+					isBinary = true
+					for(i = 0; i < this.bits.length; i++) {
+						if(this.bits[i] != 0 && this.bits[i] != 1) {
+							isBinary = false
+						}
+					}
+					return (this.bits.length == 0) || !isBinary
 				}
 			  },
 			  methods: {
