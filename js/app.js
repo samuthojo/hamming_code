@@ -72,3 +72,47 @@ function ham_calc(position, code, c_l)
 	else
 		return 1;
 }
+
+function locate_error_position(code, p_n)
+{
+	c_l = code.length
+	
+	error_position = 0
+
+	for (d = 0; d < p_n; d++) {
+		// Find current position
+		position = (2**d);
+
+		if (!is_parity_correct(position, code, c_l)) {
+			error_position = error_position + position
+		}
+		
+	}	
+
+	return error_position
+}
+
+function is_parity_correct(position, code, c_l)
+{
+    count = 0;
+	i = position - 1;
+
+	// Traverse to check correctness
+	while (i < c_l) {
+
+		for (j = i; j < i + position; j++) {
+
+			// If current bit is 1
+			if (code[j] == "1")
+				count++;
+		}
+
+		// Update i
+		i = i + 2 * position;
+	}
+
+	if (count % 2 == 0)
+		return true
+	else
+		return false
+}
