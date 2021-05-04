@@ -7,48 +7,48 @@ function calcNumParityBits(m) {
 }
 
 // Function to calculate codeword
-function calcCodeWord(bits, p_n)
+function calcCodeword(bits, p_n)
 {
     n = bits.length
 
 	c_l = p_n + n;
-	code = new Array(c_l)
+	codewd = new Array(c_l)
 
 	j = k = 0;
 
 	// Traverse the msgBits
 	for (i = 0; i < c_l; i++) {
 
-		// Update the code
+		// Update the codewd
 		if (i == ((2**k) - 1)) {
-			code[i] = 0;
+			codewd[i] = 0;
 			k++;
 		}
 
-		// Update the code[i] to the
+		// Update the codewd[i] to the
 		// input character at index j
 		else {
-			code[i] = bits[j];
+			codewd[i] = bits[j];
 			j++;
 		}
 	}
 
 	// Traverse and update the
-	// hamming code
+	// hamming codewd
 	for (d = 0; d < p_n; d++) {
 		// Find current position
 		position = (2**d);
 
 		// Find value at current position
-		value = ham_calc(position, code, c_l);
+		value = ham_calc(position, codewd, c_l);
 
-		// Update the code
-		code[position - 1] = value;
+		// Update the codewd
+		codewd[position - 1] = value;
 	}
-    return code
+    return codewd
 }
 
-function ham_calc(position, code, c_l)
+function ham_calc(position, codewd, c_l)
 {
     count = 0;
 	i = position - 1;
@@ -59,7 +59,7 @@ function ham_calc(position, code, c_l)
 		for (j = i; j < i + position; j++) {
 
 			// If current bit is 1
-			if (code[j] == "1")
+			if (codewd[j] == "1")
 				count++;
 		}
 
@@ -73,9 +73,9 @@ function ham_calc(position, code, c_l)
 		return 1;
 }
 
-function locate_error_position(code, p_n)
+function locate_error_position(codewd, p_n)
 {
-	c_l = code.length
+	c_l = codewd.length
 	
 	error_position = 0
 
@@ -83,7 +83,7 @@ function locate_error_position(code, p_n)
 		// Find current position
 		position = (2**d);
 
-		if (!is_parity_correct(position, code, c_l)) {
+		if (!is_parity_correct(position, codewd, c_l)) {
 			error_position = error_position + position
 		}
 		
@@ -92,7 +92,7 @@ function locate_error_position(code, p_n)
 	return error_position
 }
 
-function is_parity_correct(position, code, c_l)
+function is_parity_correct(position, codewd, c_l)
 {
     count = 0;
 	i = position - 1;
@@ -103,7 +103,7 @@ function is_parity_correct(position, code, c_l)
 		for (j = i; j < i + position; j++) {
 
 			// If current bit is 1
-			if (code[j] == "1")
+			if (codewd[j] == "1")
 				count++;
 		}
 

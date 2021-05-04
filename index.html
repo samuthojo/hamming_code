@@ -38,7 +38,8 @@
 				margin-right: 2px; 
 			}
 			.parity, .error {
-				border: 3px solid #ffc107 !important;
+				/* border: 3px solid #ffc107 !important; */
+				border: 3px solid #dc3545 !important;
 				/* border: 3px solid rgb(255, 255, 70) !important; */
 			}
 			/* Chrome, Safari, Edge, Opera */
@@ -73,45 +74,59 @@
 			</template>
 			<template v-else-if="step == 2">
 				<encoder 
-				:num-parity="numParity"
-				:codeword="codeword"></encoder>
+					:num-parity="numParity"
+					:codeword="getCodeword()"></encoder>
 				<button 
 					@click="goBack()"
 					class="btn btn-warning float-right">Back</button><br><br><hr>
 				<h3 style="color: #28a745;">SEND TO RECEIVER FOR DECODING</h3>
-				<p style="font-size: 32px;">Flip atmost one bit below and tap send button!</p>
+				<p style="font-size: 28px;">
+					Flip atmost <span style="font-weight: bold;">two bits</span> below and tap send button!
+				</p>
 				<transmission 
-					:codeword="codeword"
+					:codewd="getCodeword()"
 					@send="decode"></transmission>
 			</template>
-			<template v-else>
+			<template v-else-if="step == 3">
 				<h3>RECEIVER</h3><hr>
 				<h3 class="">Received Codeword</h3>
 				<receiver 
-					:code="receivedCodeword"
-					:error-position="errorPosition"></receiver>
+					:received-code="receivedCodeword"
+					:error-position="overallSyndrome ? errorPosition : 0"></receiver>
 				<hr>
 				<p>
 					<span style="font-size: 24px;">COMMENT: </span>
 					<span :style="{fontSize: '24px', color: commentColor}">{{comment}}</span>
 				</p>
 
-				<!-- error correction -->
-				<div v-if="errorPosition != 0">
+				<!-- no error -->
+				<div v-if="errorPosition == 0 && overallSyndrome == 0">
+
+					<!-- Display extracted dataword -->
+					<h3 class="">Extracted Dataword</h3>
+					<div style='display: flex'>
+						<div class='bg-primary parity-block'
+							v-for='(bit, index) in extractedDataword'
+							key='index'>{{bit}}</div>
+					</div>
+
+				</div>
+				<!-- single error -->
+				<div v-else-if="errorPosition != 0 && overallSyndrome == 1">
 
 					<h3 class="">Corrected Codeword</h3>
 					<receiver 
-						:code="correctedCodeword"
+						:received-code="correctedCodeword"
 						:error-position="errorPosition"></receiver><br>
 
-				</div><br>
+					<!-- Display extracted dataword -->
+					<h3 class="">Extracted Dataword</h3>
+					<div style='display: flex'>
+						<div class='bg-primary parity-block'
+							v-for='(bit, index) in extractedDataword'
+							key='index'>{{bit}}</div>
+					</div>
 
-				<!-- Display extracted dataword -->
-				<h3 class="">Extracted Dataword</h3>
-				<div style='display: flex'>
-					<div class='bg-primary parity-block'
-						v-for='(bit, index) in extractedDataword'
-						key='index'>{{bit}}</div>
 				</div>
 				
 				<button 
@@ -125,7 +140,7 @@
 		    // Define a new component called encoder
 			Vue.component('encoder', {
 			  props: ["numParity", "codeword"],
-			  template: "<div><h3>CODEWORD</h3><br>"+
+			  template: "<div><h3>CODEWORD</h3><hr>"+
 			  	"<h5>There will be {{ numParity }} parity bits!</h5>"+
 					  "<div style='display: flex'>"+
 						"<div class='bg-primary parity-block'"+
@@ -140,7 +155,7 @@
 								":key='index'"+
 								":class='{parity: isParityBit(index)}'"+
 							">{{bit}}</div>"+
-					"</div><br>"+	
+					"</div>"+	
 				"</div>",
 			  methods: {
 				isParityBit: function(index) {
@@ -157,7 +172,7 @@
 			})
 			// Define another component called transmission
 			Vue.component('transmission', {
-			  props: ["codeword"],
+			  props: ["codewd"],
 			  template: "<div>" +
 							"<form @submit.prevent='send()'>" +
 								"<input type='number' size=1 min=0 max=1 " +
@@ -170,36 +185,36 @@
 									"type='submit'>Send</button>" +
 							"</form>" +
 						"</div>",
-			  created: function () {
-				this.codeToSend = this.codeword
-			  },
 			  data: function () {
 				return {
-					codeToSend: []
+					codeToSend: this.codewd
 				}
 			  },
 			  methods: {
-				updateCodeToSend(event, index) {
+				updateCodeToSend: function (event, index) {
 					this.codeToSend[index] = event.target.value
 				},
-				send() {
+				send: function () {
 					this.$emit("send", this.codeToSend)
 				}
 			  }
 			})
 			// Define another component called code
 			Vue.component('receiver', {
-				props: ["code", "errorPosition"],
+				props: ["receivedCode", "errorPosition"],
 				template: "<div style='display: flex'>"+
 						"<div class='bg-primary parity-block'"+
-								"v-for='(bit, index) in code'"+
-								":key='index'"+
+								"v-for='(bit, index) in receivedCode'"+
+								":key='uniqueKey()'"+
 								":class='{error: isErrorPosition(index)}'"+
 							">{{bit}}</div>"+
 					"</div>",
 			    methods: {
 					isErrorPosition: function (index) {
 						return this.errorPosition == (index + 1)
+					},
+					uniqueKey: function () {
+						return Math.floor((Math.random() + Math.random ()) * 100)
 					}
 				}
 			})
@@ -211,6 +226,8 @@
 				dataword: "",
 				receivedCodeword: [],
 				errorPosition: 0,
+				overallParity: 0,
+				overallSyndrome: 0,
 				correctedCodeword: [],
 				extractedDataword: []
 			  },
@@ -220,10 +237,7 @@
 				},
 				numParity: function () {
 			  		return calcNumParityBits(this.bits.length)
-				},
-				codeword: function () {
-					return calcCodeWord(this.bits, this.numParity)
-				},
+				},				
 				shouldDisable: function () {
 					isBinary = true
 					for(i = 0; i < this.bits.length; i++) {
@@ -234,10 +248,15 @@
 					return (this.bits.length == 0) || !isBinary
 				},
 				comment: function () {
-					if(this.errorPosition != 0) {
+					if(this.errorPosition == 0 && this.overallSyndrome == 0) {
+						return "NO ERROR DETECTED"
+					}
+					else if(this.errorPosition != 0 && this.overallSyndrome == 1) {
 						return "ERROR DETECTED"
 					}
-					return "NO ERROR DETECTED"	
+					else if(this.errorPosition != 0 && this.overallSyndrome == 0) {
+						return "ERROR DETECTED (NOT CORRECTABLE)"
+					}
 				},
 				commentColor: function () {
 					if(this.errorPosition != 0) {
@@ -248,51 +267,86 @@
 			  },
 			  methods: {
 			  	goBack: function () {
-					if(this.step == 3) {
-						this.dataword = ""
-						this.receivedCodeword = []
-						this.errorPosition = 0
-						this.correctedCodeword = []
-						this.extractedDataword = []
-					}
-					this.step = 1
+					this.step--
 			  	},
 			  	goNext: function () {
 			  		this.step++ 
 			  	},
 			  	encode: function () {
+					this.setOverallParity()  
 			  		this.goNext()
 			  	},
+				setOverallParity: function () {
+					word = this.getCodeword()
+					count = 0
+					for(i = 0; i < word.length; i++) {
+						if(word[i] == 1) {
+							count++
+						}
+					}
+					if(count % 2 == 0) {
+						this.overallParity = 0
+					} else {
+						this.overallParity = 1
+					}	 
+				}, 
+				getCodeword: function  () {
+					return calcCodeword(this.bits, this.numParity)
+				}, 
+				getOverallSyn: function (word) {
+					count = 0
+					for(i = 0; i < word.length; i++) {
+						if(word[i] == 1) {
+							count++
+						}
+					}
+					if(count % 2 == 0) {
+						return 0
+					}
+					return 1
+				},
+				extractDataword: function (word) {
+					/* Extract dataword */
+					extractedWord = []
+					index = 0
+					for(i = 0; i < word.length; i++) {
+						if(!Number.isInteger(Math.log2(i + 1))) {
+							extractedWord[index] = word[i]
+							index++
+						}
+					}
+					this.extractedDataword = extractedWord
+				},
 				decode: function (payload) {
-					this.errorPosition = locate_error_position(payload, this.numParity)
 					this.receivedCodeword = payload
+					this.errorPosition = locate_error_position(payload, this.numParity)
+					receivedExtendedCode = [...payload]
+					receivedExtendedCode[payload.length] = this.overallParity
+					this.overallSyndrome = this.getOverallSyn(receivedExtendedCode)
+					console.log("encodedword", this.getCodeword());
 
-					if(this.errorPosition != 0) {
-
-						/* let's correct the error */
-						temp = [...this.receivedCodeword]
-						if(this.receivedCodeword[this.errorPosition - 1] ==  0) {
-							console.log("we are here");
+					if(this.errorPosition == 0 && this.overallSyndrome == 0) {
+						/* no error */
+						this.correctedCodeword = payload
+						this.extractDataword(payload)
+					}
+					else if(this.errorPosition != 0 && this.overallSyndrome == 1) {
+						/* correctable single error, let's correct it */
+						temp = [...payload]
+						if(temp[this.errorPosition - 1] ==  0) {
 							temp[this.errorPosition - 1] = 1
 						} else {
 							temp[this.errorPosition - 1] = 0
 						}
 						this.correctedCodeword = temp
-					} else {
-						this.correctedCodeword = this.receivedCodeword
+						this.extractDataword(temp)
 					}
-
-					/* Extract dataword */
-					index = 0
-					for(i = 0; i < this.correctedCodeword.length; i++) {
-						if(!Number.isInteger(Math.log2(i + 1))) {
-							this.extractedDataword[index] = this.correctedCodeword[i]
-							index++
-						}
+					else if(this.errorPosition != 0 && this.overallSyndrome == 0) {
+						/* detectable (not correctable) error (double) */
+						this.correctedCodeword = []
 					}
 
 					this.goNext()
-
 				}  
 			  }
 			})
