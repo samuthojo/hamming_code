@@ -10,16 +10,21 @@
 		<link href="img/logo.png" rel="Shortcut Icon">
 		<style>
 			body {
+				width: 100%;
 				display: flex;
 				justify-content: center;
 			}
             #container {
-            	margin-top: 4%;
-            	min-width: 30%;
+            	margin: 25px auto 0;
+            	/* min-width: 30%; */
             }
 			@media only screen and (max-width: 600px) {
+				body {
+					width: 100%;
+					align-items: center;
+				}
 				#container {
-					min-width: 100%;
+					width: 100%;
 					padding: 16px;
 				}
 			}
@@ -79,7 +84,7 @@
 				<button 
 					@click="goBack()"
 					class="btn btn-warning float-right">Back</button><br><br><hr>
-				<h3 style="color: #28a745;">SEND TO RECEIVER FOR DECODING</h3>
+				<h3 style="color: #28a745;">TRANSMISSION</h3>
 				<p style="font-size: 28px;">
 					Flip atmost <span style="font-weight: bold;">two bits</span> below and tap send button!
 				</p>
@@ -180,7 +185,7 @@
 									"v-for='bit, index in codeToSend' " +
 									":key='index' " +
 									":value='bit' @input='updateCodeToSend($event, index)' required>" +
-								"<br>" +
+								"<br><br>" +
 								"<button class='btn btn-primary float-right' " +
 									"type='submit'>Send</button>" +
 							"</form>" +
